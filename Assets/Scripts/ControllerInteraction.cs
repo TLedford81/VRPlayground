@@ -9,6 +9,8 @@ public class ControllerInteraction : MonoBehaviour {
 
     public GameObject menu;
     private BeachBall ball;
+    public GameObject objectinhand;
+    public GameObject model;
 
     SteamVR_TrackedObject trackedObject;
     private SteamVR_Controller.Device controller
@@ -50,37 +52,68 @@ public class ControllerInteraction : MonoBehaviour {
                 menu.SetActive(true);
             }
         }
+        if (controller.GetPressUp(SteamVR_Controller.ButtonMask.Grip))
+        {
+            if (objectinhand.GetComponent<Gun>())
+            {
+                model.SetActive(true);
+            }
+            Debug.Log("Dropping Item");
+            objectinhand.GetComponent<Rigidbody>().isKinematic = false;
+            objectinhand.gameObject.transform.SetParent(null);
+            objectinhand = null;
+            tossObject(objectinhand.GetComponent<Rigidbody>());
+        }
+
+        if (objectinhand != null)
+        {
+            if (objectinhand.GetComponent<Gun>())
+            {
+                Gun gun = objectinhand.GetComponent<Gun>();
+                if (controller.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+                {
+                    gun.Shoot();
+                }
+            }
+        }
     }
+
+    //object.transform.localposition = new Vector3(0.002f, 0.009f, -0.132)
+    //    rotation = this.transform.localrotation
+    //    rotate 0 90 60
 
     private void OnTriggerStay(Collider other)
     {
+        Debug.Log(other);
         if (!other.GetComponent<StaticObject>())
         {
-            if (controller.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+            Debug.Log(other + " IS STATIC");
+            if (controller.GetPressDown(SteamVR_Controller.ButtonMask.Grip))
             {
+                Debug.Log("Grabbing " + other);
                 other.attachedRigidbody.isKinematic = true;
                 other.gameObject.transform.SetParent(this.gameObject.transform);
+                objectinhand = other.gameObject;
+                if (objectinhand.GetComponent<Gun>())
+                {
+                    other.transform.localPosition = new Vector3(0f, -0.02f, 0.02f);
+                    other.transform.rotation = this.transform.rotation;
+                    other.transform.Rotate(45, 0, 0);
+                    model.SetActive(false);
+                }
             }
-            if (controller.GetTouchUp(SteamVR_Controller.ButtonMask.Trigger))
-            {
-                other.attachedRigidbody.isKinematic = false;
-                other.gameObject.transform.SetParent(null);
-            }
-
-            tossObject(other.attachedRigidbody);
         }
 
-        if (controller.GetTouchDown(SteamVR_Controller.ButtonMask.Trigger))
+        //if (controller.gettouchdown(steamvr_controller.buttonmask.trigger))
+        //{
+        //    if (other.getcomponent<menuteleportbutton>())
+        //    {
+        //        other.getcomponent<menuteleportbutton>().teleport();
+        //        debug.log("attempting to teleport");
+        //    }
+        if (other.GetComponent<SleepButton>())
         {
-            if (other.GetComponent<MenuTeleportButton>())
-            {
-                other.GetComponent<MenuTeleportButton>().Teleport();
-                Debug.Log("Attempting to Teleport");
-            }
-            if (other.GetComponent<SleepButton>())
-            {
-                other.GetComponent<SleepButton>().Sleep();
-            }
+            other.GetComponent<SleepButton>().Sleep();
         }
     }
 
